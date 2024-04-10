@@ -8,3 +8,6 @@ type Return struct {
 var RETURN = Return{}
 
 var FUNC_TABLE = make(map[uint32]any, 64)
+
+// JIT_CONSTANT determines
+var JIT_CONSTANT uint16 = 1000

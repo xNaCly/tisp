@@ -2,6 +2,7 @@ package expr
 
 import (
 	"github.com/xnacly/sophia/core/consts"
+	"github.com/xnacly/sophia/core/debug"
 	"github.com/xnacly/sophia/core/serror"
 	"github.com/xnacly/sophia/core/token"
 	"github.com/xnacly/sophia/core/types"
@@ -11,6 +12,7 @@ type Call struct {
 	Token *token.Token
 	Key   uint32
 	Args  []types.Node
+	Calls uint16
 }
 
 func (c *Call) GetChildren() []types.Node {
@@ -39,6 +41,17 @@ func (c *Call) Eval() any {
 		// happens for built ins, thus the cast can not fail
 		function, _ := storedFunc.(types.KnownFunctionInterface)
 		return function(c.Token, c.Args...)
+	}
+
+	if c.Calls >= consts.JIT_CONSTANT && def.Jited == nil && JIT != nil {
+		debug.Logf("[JIT] Attempting to compile function %q\n", c.Token.Raw)
+		// TODO: call JIT here
+	}
+
+	if def.Jited != nil {
+		return def.Jited(def.Params)
+	} else {
+		c.Calls++
 	}
 
 	return callFunction(c.Token, def.Body, def.Params, c.Args)

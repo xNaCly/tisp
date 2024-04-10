@@ -12,6 +12,7 @@ type Func struct {
 	Name   types.Node
 	Params *Array
 	Body   []types.Node
+	Jited  func(any) any
 }
 
 func (f *Func) GetChildren() []types.Node {

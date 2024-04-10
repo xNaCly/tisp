@@ -21,8 +21,8 @@
     (max neg pos))
 
 ;; used for benchmarking and profiling
-(for [i] 500_000
-    (assert (= (solve example1) 3)) ;; 3
-    (assert (= (solve example3) 4)) ;; 4
-    (assert (= (solve example2) 4)) ;; 4
+(for [i] 1_000_000
+    (solve example1) ;; 3
+    (solve example3) ;; 4
+    (solve example2) ;; 4
 )
