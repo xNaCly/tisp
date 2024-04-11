@@ -21,6 +21,4 @@ type Config struct {
 	JIT bool
 }
 
-var CONF = Config{
-	Debug: false,
-}
+var CONF = Config{}

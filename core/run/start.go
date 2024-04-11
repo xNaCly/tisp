@@ -19,10 +19,12 @@ func Start() {
 	execute := flag.String("exp", "", "specifiy expression to execute")
 	dbg := flag.Bool("dbg", false, "enable debug logs")
 	allErrors := flag.Bool("all-errors", false, "display all found errors")
+	jit := flag.Bool("jit", true, "disabled or enable jit compiler")
 	flag.Parse()
 	core.CONF = core.Config{
 		Debug:     *dbg,
 		AllErrors: *allErrors,
+		JIT:       *jit,
 	}
 
 	if *dbg {
