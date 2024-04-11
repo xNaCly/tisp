@@ -11,6 +11,7 @@ import (
 
 	"github.com/xnacly/sophia/core"
 	"github.com/xnacly/sophia/core/debug"
+	"github.com/xnacly/sophia/core/expr"
 	"github.com/xnacly/sophia/core/serror"
 )
 
@@ -31,6 +32,10 @@ func Start() {
 		log.SetFlags(log.Ltime | log.Lmicroseconds)
 	} else {
 		log.SetFlags(0)
+	}
+
+	if core.CONF.JIT {
+		expr.JIT = &expr.Jit{}
 	}
 
 	stdinInf, err := os.Stdin.Stat()

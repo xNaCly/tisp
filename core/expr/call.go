@@ -43,17 +43,22 @@ func (c *Call) Eval() any {
 		return function(c.Token, c.Args...)
 	}
 
-	if c.Calls >= consts.JIT_CONSTANT && def.Jited == nil && JIT != nil {
+	if !def.WasJitted && c.Calls >= consts.JIT_CONSTANT && def.Jited == nil && JIT != nil {
 		debug.Logf("[JIT] Attempting to compile function %q\n", c.Token.Raw)
-		// TODO: call JIT here
-	}
-
-	if def.Jited != nil {
+		def.WasJitted = true
+		fun, err := JIT.Compile(def)
+		if err != nil {
+			debug.Logf("[JIT] Failed to compile function %q: %s, bailing out to the interpreter\n", c.Token.Raw, err)
+			goto backout
+		}
+		def.Jited = fun
+	} else if def.Jited != nil {
 		return def.Jited(def.Params)
 	} else {
 		c.Calls++
 	}
 
+backout:
 	return callFunction(c.Token, def.Body, def.Params, c.Args)
 }
 
