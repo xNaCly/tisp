@@ -53,7 +53,7 @@ func (c *Call) Eval() any {
 		}
 		def.Jited = fun
 	} else if def.Jited != nil {
-		return def.Jited(def.Params)
+		return def.Jited(c.Args[0].Eval())
 	} else {
 		c.Calls++
 	}

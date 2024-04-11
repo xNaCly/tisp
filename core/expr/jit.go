@@ -2,7 +2,12 @@ package expr
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+	"plugin"
+	"strings"
 	"sync"
 
 	"github.com/xnacly/sophia/core/debug"
@@ -23,12 +28,14 @@ type Jit struct {
 
 // Compile compiles
 func (j *Jit) Compile(ast *Func) (func(any) any, error) {
+	fmt.Println("Called")
 	j.mutex.Lock()
 	defer j.mutex.Unlock()
 
+	functionName := strings.ToTitle(ast.Name.(*Ident).Name)
 	buf := &bytes.Buffer{}
 	buf.WriteString("package main;func ")
-	buf.WriteString(ast.Name.(*Ident).Name)
+	buf.WriteString(functionName)
 	buf.WriteRune('(')
 	for i, arg := range ast.Params.Children {
 		a := arg.(*Ident)
@@ -38,26 +45,59 @@ func (j *Jit) Compile(ast *Func) (func(any) any, error) {
 			buf.WriteRune(',')
 		}
 	}
-	buf.WriteRune(')')
-	buf.WriteRune('{')
-	err := codeGen(buf, ast.Body)
+	buf.WriteString(")any{")
+	err := codeGen(buf, ast.Body, true)
 	if err != nil {
 		return nil, err
 	}
 	buf.WriteRune('}')
 
-	debug.Log(buf.String())
+	debug.Log("[JIT] generated code:", buf.String())
 
-	// TODO: go compiler invocation
-	// TODO: opening the go plugin
-	// TODO: look up generated function
+	name := "jit_" + functionName
+	file, err := os.Create(name + ".go")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(file.Name())
 
-	debug.Logf("Done compiling %q\n", ast.Name.GetToken().Raw)
-	return nil, nil
+	_, err = buf.WriteTo(file)
+	if err != nil {
+		return nil, err
+	}
+
+	sName := name + ".so"
+	cmd := exec.Command("go", "build", "-buildmode=plugin", "-o", sName, file.Name())
+	err = cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(sName)
+
+	plug, err := plugin.Open(sName)
+	if err != nil {
+		return nil, err
+	}
+
+	symbol, err := plug.Lookup(functionName)
+	if err != nil {
+		return nil, err
+	}
+
+	function, ok := symbol.(func(any) any)
+	if !ok {
+		return nil, errors.New("Failed to cast the function to the given type")
+	}
+
+	debug.Logf("[JIT] Done compiling %q\n", ast.Name.GetToken().Raw)
+	return function, nil
 }
 
-func codeGen(b *bytes.Buffer, node []types.Node) error {
-	for _, n := range node {
+func codeGen(b *bytes.Buffer, node []types.Node, final bool) error {
+	for i, n := range node {
+		if final && i+1 == len(node) {
+			b.WriteString("return ")
+		}
 		switch t := n.(type) {
 		case *String:
 			b.WriteRune('"')
@@ -73,7 +113,7 @@ func codeGen(b *bytes.Buffer, node []types.Node) error {
 			}
 			b.WriteString(t.Ident.Name)
 			b.WriteString(" := ")
-			err := codeGen(b, t.Value)
+			err := codeGen(b, t.Value, false)
 			if err != nil {
 				return err
 			}

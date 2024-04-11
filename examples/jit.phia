@@ -1,0 +1,16 @@
+;; vim: syntax=lisp
+
+;; example for language features the jit compiler currently supports 
+
+;; jit currently supports
+(fun t [n] 
+    n)
+
+(let sum 0)
+(for [n] 50_000_000
+    (let sum 
+        (+ (t n) sum)
+    )
+)
+
+(println sum)
