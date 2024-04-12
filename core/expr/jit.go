@@ -46,7 +46,7 @@ func (j *Jit) Compile(ast *Func) (func(any) any, error) {
 		}
 	}
 	buf.WriteString(")any{")
-	err := codeGen(buf, ast.Body, true)
+	err := codeGen(buf, true, ast.Body...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (j *Jit) Compile(ast *Func) (func(any) any, error) {
 	return function, nil
 }
 
-func codeGen(b *bytes.Buffer, node []types.Node, final bool) error {
+func codeGen(b *bytes.Buffer, final bool, node ...types.Node) error {
 	for i, n := range node {
 		if final && i+1 == len(node) {
 			b.WriteString("return ")
@@ -117,13 +117,22 @@ func codeGen(b *bytes.Buffer, node []types.Node, final bool) error {
 			}
 		case *Ident:
 			b.WriteString(t.Name)
+		case *Array:
+			b.WriteString("[]any{")
+			for i, c := range t.Children {
+				codeGen(b, false, c)
+				if i+1 != len(t.Children) {
+					b.WriteRune(',')
+				}
+			}
+			b.WriteRune('}')
 		case *Var:
 			if len(t.Value) > 1 {
 				return fmt.Errorf("Variables containing more than 1 constant not supported by the JIT: %T", t)
 			}
 			b.WriteString(t.Ident.Name)
 			b.WriteString(" := ")
-			err := codeGen(b, t.Value, false)
+			err := codeGen(b, false, t.Value...)
 			if err != nil {
 				return err
 			}
