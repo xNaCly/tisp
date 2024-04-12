@@ -12,7 +12,7 @@ type Call struct {
 	Token *token.Token
 	Key   uint32
 	Args  []types.Node
-	Calls uint16
+	Calls uint64
 }
 
 func (c *Call) GetChildren() []types.Node {
@@ -44,21 +44,22 @@ func (c *Call) Eval() any {
 	}
 
 	if !def.WasJitted && c.Calls >= consts.JIT_CONSTANT && def.Jited == nil && JIT != nil {
-		debug.Logf("[JIT] Attempting to compile function %q\n", c.Token.Raw)
 		def.WasJitted = true
-		fun, err := JIT.Compile(def)
-		if err != nil {
-			debug.Logf("[JIT] Failed to compile function %q: %s, bailing out to the interpreter\n", c.Token.Raw, err)
-			goto backout
-		}
-		def.Jited = fun
+		go func(functionDef *Func) {
+			debug.Logf("[JIT] Attempting to compile function %q\n", c.Token.Raw)
+			fun, err := JIT.Compile(def)
+			if err != nil {
+				debug.Logf("[JIT] Failed to compile function %q: %s, bailing out to the interpreter\n", c.Token.Raw, err)
+				return
+			}
+			def.Jited = fun
+		}(def)
 	} else if def.Jited != nil {
 		return def.Jited(c.Args[0].Eval())
 	} else {
 		c.Calls++
 	}
 
-backout:
 	return callFunction(c.Token, def.Body, def.Params, c.Args)
 }
 

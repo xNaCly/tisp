@@ -7,7 +7,7 @@
     n)
 
 (let sum 0)
-(for [n] 50_000_000
+(for [n] 100_000
     (let sum 
         (+ (t n) sum)
     )

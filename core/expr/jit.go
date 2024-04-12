@@ -28,7 +28,6 @@ type Jit struct {
 
 // Compile compiles
 func (j *Jit) Compile(ast *Func) (func(any) any, error) {
-	fmt.Println("Called")
 	j.mutex.Lock()
 	defer j.mutex.Unlock()
 
