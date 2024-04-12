@@ -4,13 +4,8 @@
 
 ;; jit currently supports
 (fun t [n] 
-    n)
+    2.0515)
 
-(let sum 0)
-(for [n] 100_000
-    (let sum 
-        (+ (t n) sum)
-    )
+(for [n] 1_000_000
+    (t n)
 )
-
-(println sum)

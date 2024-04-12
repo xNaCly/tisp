@@ -104,6 +104,12 @@ func codeGen(b *bytes.Buffer, node []types.Node, final bool) error {
 			b.WriteRune('"')
 		case *Float:
 			b.WriteString(t.Token.Raw)
+		case *Boolean:
+			if t.Value {
+				b.WriteString("true")
+			} else {
+				b.WriteString("false")
+			}
 		case *Ident:
 			b.WriteString(t.Name)
 		case *Var:
