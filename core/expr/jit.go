@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/xnacly/sophia/core"
 	"github.com/xnacly/sophia/core/debug"
 	"github.com/xnacly/sophia/core/types"
 )
@@ -67,6 +68,10 @@ func (j *Jit) Compile(ast *Func) (func(any) any, error) {
 
 	sName := name + ".so"
 	cmd := exec.Command("go", "build", "-buildmode=plugin", "-o", sName, file.Name())
+	if core.CONF.Debug {
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+	}
 	err = cmd.Run()
 	if err != nil {
 		return nil, err
