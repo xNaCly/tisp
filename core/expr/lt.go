@@ -23,5 +23,5 @@ func (l *Lt) GetToken() *token.Token {
 }
 
 func (l *Lt) Eval() any {
-	return castFloatPanic(l.Children[0].Eval(), l.Children[0].GetToken()) < castFloatPanic(l.Children[1].Eval(), l.Children[1].GetToken())
+	return MustFloat(l.Children[0].Eval(), l.Children[0].GetToken()) < MustFloat(l.Children[1].Eval(), l.Children[1].GetToken())
 }

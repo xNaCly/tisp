@@ -6,7 +6,7 @@ import (
 )
 
 // fastpath for casting bool, reduces memory allocation by skipping allocation
-func castBoolPanic(in any, t *token.Token) bool {
+func MustBool(in any, t *token.Token) bool {
 	switch v := in.(type) {
 	case bool:
 		return v
@@ -19,7 +19,7 @@ func castBoolPanic(in any, t *token.Token) bool {
 }
 
 // fastpath for casting float64, reduces memory allocation by skipping allocation
-func castFloatPanic(in any, t *token.Token) float64 {
+func MustFloat(in any, t *token.Token) float64 {
 	switch v := in.(type) {
 	case float64:
 		return v
@@ -33,7 +33,7 @@ func castFloatPanic(in any, t *token.Token) float64 {
 
 // attempts to cast `in` to `T`, returns `in` cast to `T` if successful. If
 // cast fails, panics.
-func castPanicIfNotType[T any](in any, t *token.Token) T {
+func MustT[T any](in any, t *token.Token) T {
 	val, ok := in.(T)
 	if !ok {
 		var e T

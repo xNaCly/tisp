@@ -27,15 +27,15 @@ func (m *Mul) Eval() any {
 		// fastpath for two children
 		f := m.Children[0]
 		s := m.Children[1]
-		return castFloatPanic(f.Eval(), f.GetToken()) * castFloatPanic(s.Eval(), s.GetToken())
+		return MustFloat(f.Eval(), f.GetToken()) * MustFloat(s.Eval(), s.GetToken())
 	}
 
 	res := 0.0
 	for i, c := range m.Children {
 		if i == 0 {
-			res = castFloatPanic(c.Eval(), c.GetToken())
+			res = MustFloat(c.Eval(), c.GetToken())
 		} else {
-			res *= castFloatPanic(c.Eval(), c.GetToken())
+			res *= MustFloat(c.Eval(), c.GetToken())
 		}
 	}
 	return res

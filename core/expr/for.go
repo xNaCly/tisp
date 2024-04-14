@@ -33,13 +33,13 @@ func (f *For) Eval() any {
 		serror.Add(f.Token, "Not enough arguments", "Expected at least %d parameters for loop, got %d.", 1, len(params))
 		serror.Panic()
 	}
-	element := castPanicIfNotType[*Ident](params[0], params[0].GetToken())
+	element := MustT[*Ident](params[0], params[0].GetToken())
 	oldValue, foundOldValue := consts.SYMBOL_TABLE[element.Key]
 
 	v := f.LoopOver.Eval()
 	switch v.(type) {
 	case []interface{}:
-		loopOver := castPanicIfNotType[[]interface{}](v, f.LoopOver.GetToken())
+		loopOver := MustT[[]interface{}](v, f.LoopOver.GetToken())
 
 		for _, el := range loopOver {
 			consts.SYMBOL_TABLE[element.Key] = el
