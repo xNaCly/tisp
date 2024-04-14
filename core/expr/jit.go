@@ -28,24 +28,27 @@ type Jit struct {
 }
 
 // Compile compiles
-func (j *Jit) Compile(ast *Func) (func(any) any, error) {
+func (j *Jit) Compile(ast *Func) (func(...any) any, error) {
 	j.mutex.Lock()
 	defer j.mutex.Unlock()
 
 	functionName := strings.ToTitle(ast.Name.(*Ident).Name)
 	buf := &bytes.Buffer{}
-	buf.WriteString("package main;func ")
+	buf.WriteString(`package main;import "math";func `)
 	buf.WriteString(functionName)
-	buf.WriteRune('(')
+	buf.WriteString("(args ...any)any{")
+	// regenerating params with type assertions for params
 	for i, arg := range ast.Params.Children {
 		a := arg.(*Ident)
 		buf.WriteString(a.Name)
-		buf.WriteString(" any")
-		if i+1 != len(ast.Params.Children) {
-			buf.WriteRune(',')
-		}
+		buf.WriteString(" := ")
+		buf.WriteString("args[")
+		buf.WriteRune(rune(i + 48))
+		buf.WriteString("].(")
+		buf.WriteString(ast.ArgumentDataType)
+		buf.WriteString(");")
 	}
-	buf.WriteString(")any{")
+
 	err := codeGen(buf, true, ast.Body...)
 	if err != nil {
 		return nil, err
@@ -88,13 +91,27 @@ func (j *Jit) Compile(ast *Func) (func(any) any, error) {
 		return nil, err
 	}
 
-	function, ok := symbol.(func(any) any)
+	function, ok := symbol.(func(...any) any)
 	if !ok {
 		return nil, errors.New("Failed to cast the function to the given type")
 	}
 
 	debug.Logf("[JIT] Done compiling %q\n", ast.Name.GetToken().Raw)
 	return function, nil
+}
+
+func genBinary(b *bytes.Buffer, node types.Node, op rune) error {
+	c := node.GetChildren()
+	if len(c) != 2 {
+		return fmt.Errorf("%T with more than 2 children not supported, got %d", node, len(c))
+	}
+
+	err := codeGen(b, false, c[0])
+	if err != nil {
+		return err
+	}
+	b.WriteRune(op)
+	return codeGen(b, false, c[1])
 }
 
 func codeGen(b *bytes.Buffer, final bool, node ...types.Node) error {
@@ -137,6 +154,35 @@ func codeGen(b *bytes.Buffer, final bool, node ...types.Node) error {
 				return err
 			}
 			b.WriteRune(';')
+		case *Add:
+			err := genBinary(b, t, '+')
+			if err != nil {
+				return err
+			}
+		case *Sub:
+			err := genBinary(b, t, '-')
+			if err != nil {
+				return err
+			}
+		case *Div:
+			err := genBinary(b, t, '/')
+			if err != nil {
+				return err
+			}
+		case *Mul:
+			err := genBinary(b, t, '*')
+			if err != nil {
+				return err
+			}
+		case *Mod:
+			if len(t.Children) != 2 {
+				return fmt.Errorf("%T with more than 2 children not supported, got %d", t, len(t.Children))
+			}
+			b.WriteString("math.Mod(")
+			codeGen(b, false, t.Children[0])
+			b.WriteRune(',')
+			codeGen(b, false, t.Children[1])
+			b.WriteString(")")
 		default:
 			return fmt.Errorf("Expression %T not yet supported by the JIT", t)
 		}

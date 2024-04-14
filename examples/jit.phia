@@ -3,9 +3,13 @@
 ;; example for language features the jit compiler currently supports 
 
 ;; jit currently supports
-(fun t [n] 
-    2.0515)
+(fun t [a b] 
+    (let add (+ a b))
+    (let sub (- a b))
+    (let mul (* a b))
+    (let div (/ a b))
+    (let mod (% a b))
+    [add sub mul div mod])
 
-(for [n] 1_000_000
-    (t n)
-)
+(for [n] 100_000
+    (t n n))

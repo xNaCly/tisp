@@ -45,17 +45,33 @@ func (c *Call) Eval() any {
 
 	if !def.WasJitted && c.Calls >= consts.JIT_CONSTANT && def.Jited == nil && JIT != nil {
 		def.WasJitted = true
-		go func(functionDef *Func) {
-			debug.Logf("[JIT] Attempting to compile function %q\n", c.Token.Raw)
-			fun, err := JIT.Compile(def)
-			if err != nil {
-				debug.Logf("[JIT] Failed to compile function %q: %s, bailing out to the interpreter\n", c.Token.Raw, err)
-				return
-			}
-			def.Jited = fun
-		}(def)
+		switch t := c.Args[0].Eval().(type) {
+		case float64:
+			def.ArgumentDataType = "float64"
+		case string:
+			def.ArgumentDataType = "string"
+		case bool:
+			def.ArgumentDataType = "bool"
+		default:
+			debug.Logf("Unsupported type %T for argument, skipping compilation\n", t)
+		}
+		if def.ArgumentDataType != "" {
+			go func(functionDef *Func) {
+				debug.Logf("[JIT] Attempting to compile function %q\n", c.Token.Raw)
+				fun, err := JIT.Compile(def)
+				if err != nil {
+					debug.Logf("[JIT] Failed to compile function %q: %s, bailing out to the interpreter\n", c.Token.Raw, err)
+					return
+				}
+				def.Jited = fun
+			}(def)
+		}
 	} else if def.Jited != nil {
-		return def.Jited(c.Args[0].Eval())
+		args := make([]any, len(c.Args))
+		for i, arg := range c.Args {
+			args[i] = arg.Eval()
+		}
+		return def.Jited(args...)
 	} else {
 		c.Calls++
 	}
