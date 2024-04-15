@@ -179,10 +179,90 @@ func codeGen(b *bytes.Buffer, final bool, node ...types.Node) error {
 				return fmt.Errorf("%T with more than 2 children not supported, got %d", t, len(t.Children))
 			}
 			b.WriteString("math.Mod(")
-			codeGen(b, false, t.Children[0])
+			err := codeGen(b, false, t.Children[0])
+			if err != nil {
+				return err
+			}
 			b.WriteRune(',')
-			codeGen(b, false, t.Children[1])
+			err = codeGen(b, false, t.Children[1])
+			if err != nil {
+				return err
+			}
 			b.WriteString(")")
+		case *Neg:
+			b.WriteRune('!')
+			err := codeGen(b, false, t.Children)
+			if err != nil {
+				return err
+			}
+		case *Gt:
+			err := codeGen(b, false, t.Children[0])
+			if err != nil {
+				return err
+			}
+			b.WriteRune('>')
+			err = codeGen(b, false, t.Children[1])
+			if err != nil {
+				return err
+			}
+		case *Lt:
+			err := codeGen(b, false, t.Children[0])
+			if err != nil {
+				return err
+			}
+			b.WriteRune('<')
+			err = codeGen(b, false, t.Children[1])
+			if err != nil {
+				return err
+			}
+		case *Equal:
+			err := codeGen(b, false, t.Children[0])
+			if err != nil {
+				return err
+			}
+			b.WriteString("==")
+			err = codeGen(b, false, t.Children[1])
+			if err != nil {
+				return err
+			}
+		case *And:
+			err := codeGen(b, false, t.Children[0])
+			if err != nil {
+				return err
+			}
+			b.WriteString("&&")
+			err = codeGen(b, false, t.Children[1])
+			if err != nil {
+				return err
+			}
+		case *Or:
+			err := codeGen(b, false, t.Children[0])
+			if err != nil {
+				return err
+			}
+			b.WriteString("||")
+			err = codeGen(b, false, t.Children[1])
+			if err != nil {
+				return err
+			}
+		case *If:
+			b.WriteString("if ")
+			err := codeGen(b, false, t.Condition)
+			if err != nil {
+				return err
+			}
+			b.WriteString(" {")
+			err = codeGen(b, false, t.Body...)
+			if err != nil {
+				return err
+			}
+			b.WriteString("};")
+		case *Return:
+			b.WriteString("return ")
+			err := codeGen(b, false, t.Child)
+			if err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("Expression %T not yet supported by the JIT", t)
 		}

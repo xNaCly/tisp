@@ -9,7 +9,14 @@
     (let mul (* a b))
     (let div (/ a b))
     (let mod (% a b))
-    [add sub mul div mod])
+    (let neg (not true))
+    (let gt (> a b))
+    (let lt (< a b))
+    (let eq (> a b))
+    (let andBool (and true false))
+    (let orBool (or true false))
+    (if true (return true))
+    [add sub mul div mod neg gt lt eq andBool orBool])
 
-(for [n] 100_000
+(for [n] 1_000_000
     (t n n))
