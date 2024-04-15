@@ -34,7 +34,7 @@ func (j *Jit) Compile(ast *Func) (func(...any) any, error) {
 
 	functionName := strings.ToTitle(ast.Name.(*Ident).Name)
 	buf := &bytes.Buffer{}
-	buf.WriteString(`package main;import "math";func `)
+	buf.WriteString(`package main;func `)
 	buf.WriteString(functionName)
 	buf.WriteString("(args ...any)any{")
 	// regenerating params with type assertions for params
@@ -45,7 +45,7 @@ func (j *Jit) Compile(ast *Func) (func(...any) any, error) {
 		buf.WriteString("args[")
 		buf.WriteRune(rune(i + 48))
 		buf.WriteString("].(")
-		buf.WriteString(ast.ArgumentDataType)
+		buf.WriteString(ast.ArgumentDataTypes[i])
 		buf.WriteString(");")
 	}
 
@@ -174,21 +174,23 @@ func codeGen(b *bytes.Buffer, final bool, node ...types.Node) error {
 			if err != nil {
 				return err
 			}
-		case *Mod:
-			if len(t.Children) != 2 {
-				return fmt.Errorf("%T with more than 2 children not supported, got %d", t, len(t.Children))
-			}
-			b.WriteString("math.Mod(")
-			err := codeGen(b, false, t.Children[0])
-			if err != nil {
-				return err
-			}
-			b.WriteRune(',')
-			err = codeGen(b, false, t.Children[1])
-			if err != nil {
-				return err
-			}
-			b.WriteString(")")
+
+			// BUG: disabled because requires "math" import
+			// case *Mod:
+			// 	if len(t.Children) != 2 {
+			// 		return fmt.Errorf("%T with more than 2 children not supported, got %d", t, len(t.Children))
+			// 	}
+			// 	b.WriteString("math.Mod(")
+			// 	err := codeGen(b, false, t.Children[0])
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	b.WriteRune(',')
+			// 	err = codeGen(b, false, t.Children[1])
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	b.WriteString(")")
 		case *Neg:
 			b.WriteRune('!')
 			err := codeGen(b, false, t.Children)
@@ -263,6 +265,7 @@ func codeGen(b *bytes.Buffer, final bool, node ...types.Node) error {
 			if err != nil {
 				return err
 			}
+		case *For:
 		default:
 			return fmt.Errorf("Expression %T not yet supported by the JIT", t)
 		}

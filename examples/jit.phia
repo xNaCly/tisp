@@ -18,5 +18,11 @@
     (if true (return true))
     [add sub mul div mod neg gt lt eq andBool orBool])
 
+;; returns a if bigger than b, otherwise b
+(fun max [a b]
+    (if (< a b) 
+        (return b)) 
+    a) ;; return without extra statement
+
 (for [n] 1_000_000
-    (t n n))
+    (max n n))

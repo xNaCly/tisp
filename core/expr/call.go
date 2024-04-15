@@ -1,6 +1,8 @@
 package expr
 
 import (
+	"fmt"
+
 	"github.com/xnacly/sophia/core/consts"
 	"github.com/xnacly/sophia/core/debug"
 	"github.com/xnacly/sophia/core/serror"
@@ -27,6 +29,21 @@ func (c *Call) GetToken() *token.Token {
 	return c.Token
 }
 
+func typeName(tn any) (r string, err error) {
+	switch t := tn.(type) {
+	case float64:
+		r = "float64"
+	case string:
+		r = "string"
+	case bool:
+		r = "bool"
+	default:
+		err = fmt.Errorf("Unsupported type %T for argument, skipping compilation", t)
+		r = ""
+	}
+	return
+}
+
 func (c *Call) Eval() any {
 	storedFunc, ok := consts.FUNC_TABLE[c.Key]
 	if !ok {
@@ -45,17 +62,17 @@ func (c *Call) Eval() any {
 
 	if !def.WasJitted && c.Calls >= consts.JIT_CONSTANT && def.Jited == nil && JIT != nil {
 		def.WasJitted = true
-		switch t := c.Args[0].Eval().(type) {
-		case float64:
-			def.ArgumentDataType = "float64"
-		case string:
-			def.ArgumentDataType = "string"
-		case bool:
-			def.ArgumentDataType = "bool"
-		default:
-			debug.Logf("Unsupported type %T for argument, skipping compilation\n", t)
+		def.ArgumentDataTypes = make([]string, len(def.Params.Children))
+		for i, a := range c.Args {
+			if t, err := typeName(a.Eval()); err != nil {
+				debug.Logf("[JIT] Skipping compilation of %q: %s\n", c.Token.Raw, err)
+				def.ArgumentDataTypes = []string{}
+				break
+			} else {
+				def.ArgumentDataTypes[i] = t
+			}
 		}
-		if def.ArgumentDataType != "" {
+		if len(def.ArgumentDataTypes) != 0 {
 			go func(functionDef *Func) {
 				debug.Logf("[JIT] Attempting to compile function %q\n", c.Token.Raw)
 				fun, err := JIT.Compile(def)
