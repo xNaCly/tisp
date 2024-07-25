@@ -8,10 +8,13 @@ import (
 
 // function definition
 type Func struct {
-	Token  *token.Token
-	Name   types.Node
-	Params *Array
-	Body   []types.Node
+	Token             *token.Token
+	Name              types.Node
+	Params            *Array
+	Body              []types.Node
+	Jited             func(...any) any
+	ArgumentDataTypes []string
+	WasJitted         bool
 }
 
 func (f *Func) GetChildren() []types.Node {

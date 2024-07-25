@@ -26,10 +26,10 @@ func (o *Or) Eval() any {
 	if len(o.Children) == 2 {
 		f := o.Children[0]
 		s := o.Children[1]
-		return castBoolPanic(f.Eval(), f.GetToken()) || castBoolPanic(s.Eval(), s.GetToken())
+		return MustBool(f.Eval(), f.GetToken()) || MustBool(s.Eval(), s.GetToken())
 	}
 	for _, c := range o.Children {
-		if castBoolPanic(c.Eval(), c.GetToken()) {
+		if MustBool(c.Eval(), c.GetToken()) {
 			return true
 		}
 	}

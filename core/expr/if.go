@@ -24,7 +24,7 @@ func (i *If) GetToken() *token.Token {
 }
 
 func (i *If) Eval() any {
-	cond := castBoolPanic(i.Condition.Eval(), i.Condition.GetToken())
+	cond := MustBool(i.Condition.Eval(), i.Condition.GetToken())
 	if !cond {
 		return false
 	}

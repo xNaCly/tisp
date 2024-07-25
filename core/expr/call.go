@@ -1,7 +1,10 @@
 package expr
 
 import (
+	"fmt"
+
 	"github.com/xnacly/sophia/core/consts"
+	"github.com/xnacly/sophia/core/debug"
 	"github.com/xnacly/sophia/core/serror"
 	"github.com/xnacly/sophia/core/token"
 	"github.com/xnacly/sophia/core/types"
@@ -11,6 +14,7 @@ type Call struct {
 	Token *token.Token
 	Key   uint32
 	Args  []types.Node
+	Calls uint64
 }
 
 func (c *Call) GetChildren() []types.Node {
@@ -23,6 +27,21 @@ func (n *Call) SetChildren(c []types.Node) {
 
 func (c *Call) GetToken() *token.Token {
 	return c.Token
+}
+
+func typeName(tn any) (r string, err error) {
+	switch t := tn.(type) {
+	case float64:
+		r = "float64"
+	case string:
+		r = "string"
+	case bool:
+		r = "bool"
+	default:
+		err = fmt.Errorf("Unsupported type %T for argument, skipping compilation", t)
+		r = ""
+	}
+	return
 }
 
 func (c *Call) Eval() any {
@@ -39,6 +58,39 @@ func (c *Call) Eval() any {
 		// happens for built ins, thus the cast can not fail
 		function, _ := storedFunc.(types.KnownFunctionInterface)
 		return function(c.Token, c.Args...)
+	}
+
+	if !def.WasJitted && c.Calls >= consts.JIT_CONSTANT && def.Jited == nil && JIT != nil {
+		def.WasJitted = true
+		def.ArgumentDataTypes = make([]string, len(def.Params.Children))
+		for i, a := range c.Args {
+			if t, err := typeName(a.Eval()); err != nil {
+				debug.Logf("[JIT] Skipping compilation of %q: %s\n", c.Token.Raw, err)
+				def.ArgumentDataTypes = []string{}
+				break
+			} else {
+				def.ArgumentDataTypes[i] = t
+			}
+		}
+		if len(def.ArgumentDataTypes) != 0 {
+			go func(functionDef *Func) {
+				debug.Logf("[JIT] Attempting to compile function %q\n", c.Token.Raw)
+				fun, err := JIT.Compile(def)
+				if err != nil {
+					debug.Logf("[JIT] Failed to compile function %q: %s, bailing out to the interpreter\n", c.Token.Raw, err)
+					return
+				}
+				def.Jited = fun
+			}(def)
+		}
+	} else if def.Jited != nil {
+		args := make([]any, len(c.Args))
+		for i, arg := range c.Args {
+			args[i] = arg.Eval()
+		}
+		return def.Jited(args...)
+	} else {
+		c.Calls++
 	}
 
 	return callFunction(c.Token, def.Body, def.Params, c.Args)

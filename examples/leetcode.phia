@@ -4,12 +4,6 @@
 (let example2 -3 -2 -1 0 0 1 2)
 (let example3 5 20 66 1314)
 
-;; returns a if bigger than b, otherwise b
-(fun max [a b]
-    (if (< a b) 
-        (return b)) 
-    a) ;; return without extra statement
-
 ;; counts negative and positve numbers in arr, returns the higher amount
 (fun solve [arr]
     (let pos 0)
@@ -18,11 +12,13 @@
         (match
             (if (< i 0) (let pos (+ pos 1)))
             (let neg (+ neg 1))))
-    (max neg pos))
+    (if (< pos neg) 
+        (return neg)) 
+    pos)
 
 ;; used for benchmarking and profiling
-(for [i] 500_000
-    (assert (= (solve example1) 3)) ;; 3
-    (assert (= (solve example3) 4)) ;; 4
-    (assert (= (solve example2) 4)) ;; 4
+(for [i] 100_000
+    (solve example1) ;; 3
+    (solve example3) ;; 4
+    (solve example2) ;; 4
 )

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/xnacly/sophia/core"
 	_ "github.com/xnacly/sophia/core/builtin"
@@ -66,7 +67,9 @@ func Run(r io.Reader, filename string) (s []string, e error) {
 		return
 	}
 
+	start := time.Now()
 	s = eval.Eval(filename, ast)
+	fmt.Println("Took: ", time.Since(start))
 	debug.Log("done evaling")
 
 	return

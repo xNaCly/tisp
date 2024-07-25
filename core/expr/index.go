@@ -107,7 +107,7 @@ func indexHelper(target any, index []types.Node) any {
 }
 
 func (i *Index) Eval() any {
-	ident := castPanicIfNotType[*Ident](i.Target, i.Target.GetToken())
+	ident := MustT[*Ident](i.Target, i.Target.GetToken())
 	requested, found := consts.SYMBOL_TABLE[ident.Key]
 	if !found {
 		serror.Add(ident.Token, "Index error", "Requested element %q not defined", ident.Name)

@@ -27,14 +27,14 @@ func (d *Div) Eval() any {
 		// fastpath for two children
 		f := d.Children[0]
 		s := d.Children[1]
-		return castFloatPanic(f.Eval(), f.GetToken()) / castFloatPanic(s.Eval(), s.GetToken())
+		return MustFloat(f.Eval(), f.GetToken()) / MustFloat(s.Eval(), s.GetToken())
 	}
 	res := 0.0
 	for i, c := range d.Children {
 		if i == 0 {
-			res = castFloatPanic(c.Eval(), c.GetToken())
+			res = MustFloat(c.Eval(), c.GetToken())
 		} else {
-			res /= castFloatPanic(c.Eval(), c.GetToken())
+			res /= MustFloat(c.Eval(), c.GetToken())
 		}
 	}
 	return res

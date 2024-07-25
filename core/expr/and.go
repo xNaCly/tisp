@@ -27,11 +27,11 @@ func (a *And) Eval() any {
 	if len(a.Children) == 2 {
 		f := a.Children[0]
 		s := a.Children[1]
-		return castBoolPanic(f.Eval(), f.GetToken()) && castBoolPanic(s.Eval(), s.GetToken())
+		return MustBool(f.Eval(), f.GetToken()) && MustBool(s.Eval(), s.GetToken())
 	}
 
 	for _, c := range a.Children {
-		v := castBoolPanic(c.Eval(), a.Token)
+		v := MustBool(c.Eval(), a.Token)
 		if !v {
 			return false
 		}
