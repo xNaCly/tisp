@@ -11,6 +11,7 @@ import (
 	"github.com/xnacly/sophia/core"
 	"github.com/xnacly/sophia/core/alloc"
 	"github.com/xnacly/sophia/core/consts"
+	"github.com/xnacly/sophia/core/expr"
 	"github.com/xnacly/sophia/core/run"
 	"github.com/xnacly/sophia/core/serror"
 )
@@ -19,6 +20,10 @@ import (
 func Embed(config Configuration) {
 	if config.EnableGoStd {
 		panic("Embedding error: Linking the go standard library via modules is currently not implemented")
+	}
+
+	if config.EnableJit {
+		expr.JIT = &expr.Jit{}
 	}
 
 	core.CONF.Debug = config.Debug
